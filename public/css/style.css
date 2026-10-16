@@ -1,0 +1,12 @@
+body {
+  font-family: Arial;
+  text-align: center;
+}
+
+.hidden {
+  display: none;
+}
+
+#pokemonCard {
+  margin-top: 20px;
+}

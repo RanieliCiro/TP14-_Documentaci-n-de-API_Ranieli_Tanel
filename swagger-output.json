@@ -1,0 +1,473 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "API Pokédex",
+    "version": "1.0.0",
+    "description": "API que consulta la PokeAPI (https://pokeapi.co) y permite armar un equipo Pokémon propio de hasta 6 integrantes."
+  },
+  "host": "localhost:3000",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Pokémon",
+      "description": "Consultas de Pokémon (datos de la PokeAPI)"
+    },
+    {
+      "name": "Equipo",
+      "description": "CRUD del equipo Pokémon (guardado en memoria)"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/api/pokemon": {
+      "get": {
+        "tags": [
+          "Pokémon"
+        ],
+        "summary": "Lista paginada de Pokémon",
+        "description": "Devuelve una lista de nombres de Pokémon consultando la PokeAPI.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Cantidad de resultados (1 a 100). Por defecto 10.",
+            "type": "integer",
+            "example": 10
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Cantidad de resultados a saltear. Por defecto 0.",
+            "type": "integer",
+            "example": 0
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de Pokémon",
+            "schema": {
+              "$ref": "#/definitions/ListaPokemon"
+            }
+          },
+          "400": {
+            "description": "limit u offset inválidos",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "502": {
+            "description": "Falla al consultar la PokeAPI",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/api/pokemon/{nombre}": {
+      "get": {
+        "tags": [
+          "Pokémon"
+        ],
+        "summary": "Obtiene un Pokémon",
+        "description": "Busca un Pokémon por nombre o por número (id) en la PokeAPI.",
+        "parameters": [
+          {
+            "name": "nombre",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Nombre o id del Pokémon",
+            "example": "pikachu"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pokémon encontrado",
+            "schema": {
+              "$ref": "#/definitions/Pokemon"
+            }
+          },
+          "404": {
+            "description": "El Pokémon no existe",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "502": {
+            "description": "Falla al consultar la PokeAPI",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/api/tipos/{tipo}": {
+      "get": {
+        "tags": [
+          "Pokémon"
+        ],
+        "summary": "Pokémon de un tipo",
+        "description": "Devuelve los nombres de los Pokémon que pertenecen a un tipo (fire, water, grass...).",
+        "parameters": [
+          {
+            "name": "tipo",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "Nombre del tipo en inglés",
+            "example": "fire"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pokémon del tipo",
+            "schema": {
+              "$ref": "#/definitions/PokemonPorTipo"
+            }
+          },
+          "404": {
+            "description": "El tipo no existe",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "502": {
+            "description": "Falla al consultar la PokeAPI",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/api/equipo": {
+      "get": {
+        "tags": [
+          "Equipo"
+        ],
+        "summary": "Lista el equipo",
+        "description": "Devuelve todos los Pokémon guardados en el equipo (máximo 6).",
+        "responses": {
+          "200": {
+            "description": "Equipo actual",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MiembroEquipo"
+              },
+              "xml": {
+                "name": "main"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Equipo"
+        ],
+        "summary": "Agrega un Pokémon al equipo",
+        "description": "Verifica en la PokeAPI que el Pokémon exista y lo agrega al equipo. El equipo admite como máximo 6 integrantes.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Datos del nuevo integrante",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/NuevoMiembro"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Integrante creado",
+            "schema": {
+              "$ref": "#/definitions/MiembroEquipo"
+            }
+          },
+          "400": {
+            "description": "Datos inválidos o equipo lleno",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "El Pokémon no existe",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "502": {
+            "description": "Falla al consultar la PokeAPI",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/api/equipo/{id}": {
+      "get": {
+        "tags": [
+          "Equipo"
+        ],
+        "summary": "Obtiene un integrante del equipo",
+        "description": "Devuelve un integrante del equipo a partir de su id.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Id del integrante",
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Integrante encontrado",
+            "schema": {
+              "$ref": "#/definitions/MiembroEquipo"
+            }
+          },
+          "404": {
+            "description": "No existe el integrante",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Equipo"
+        ],
+        "summary": "Modifica un integrante",
+        "description": "Cambia el apodo y/o el nivel de un integrante del equipo.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Id del integrante",
+            "example": 1
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Campos a modificar",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ModificarMiembro"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Integrante modificado",
+            "schema": {
+              "$ref": "#/definitions/MiembroEquipo"
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "No existe el integrante",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Equipo"
+        ],
+        "summary": "Elimina un integrante",
+        "description": "Saca a un Pokémon del equipo.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "description": "Id del integrante",
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Integrante eliminado",
+            "schema": {
+              "$ref": "#/definitions/MiembroEquipo"
+            }
+          },
+          "404": {
+            "description": "No existe el integrante",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Pokemon": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 25
+        },
+        "nombre": {
+          "type": "string",
+          "example": "pikachu"
+        },
+        "tipos": {
+          "type": "array",
+          "example": [
+            "electric"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "peso": {
+          "type": "number",
+          "example": 60
+        },
+        "altura": {
+          "type": "number",
+          "example": 4
+        },
+        "imagen": {
+          "type": "string",
+          "example": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+        }
+      }
+    },
+    "ListaPokemon": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "number",
+          "example": 1350
+        },
+        "resultados": {
+          "type": "array",
+          "example": [
+            "bulbasaur",
+            "ivysaur",
+            "venusaur"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "PokemonPorTipo": {
+      "type": "object",
+      "properties": {
+        "tipo": {
+          "type": "string",
+          "example": "fire"
+        },
+        "pokemon": {
+          "type": "array",
+          "example": [
+            "charmander",
+            "charmeleon",
+            "charizard"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "MiembroEquipo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "example": 1
+        },
+        "nombre": {
+          "type": "string",
+          "example": "pikachu"
+        },
+        "apodo": {
+          "type": "string",
+          "example": "Rayito"
+        },
+        "nivel": {
+          "type": "number",
+          "example": 5
+        },
+        "tipos": {
+          "type": "array",
+          "example": [
+            "electric"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "NuevoMiembro": {
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "example": "pikachu"
+        },
+        "apodo": {
+          "type": "string",
+          "example": "Rayito"
+        },
+        "nivel": {
+          "type": "number",
+          "example": 5
+        }
+      },
+      "required": [
+        "nombre"
+      ]
+    },
+    "ModificarMiembro": {
+      "type": "object",
+      "properties": {
+        "apodo": {
+          "type": "string",
+          "example": "Rayo"
+        },
+        "nivel": {
+          "type": "number",
+          "example": 20
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "Mensaje de error"
+        }
+      }
+    }
+  }
+}
